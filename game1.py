@@ -67,19 +67,19 @@ class PPOAgent:
 
     def build_actor(self):
         model = Sequential()
-        model.add(Dense(64, activation='relu', input_dim=1))  # Change input_dim to 1
+        model.add(Dense(64, activation='relu', input_dim=3))  # Change input_dim to 1
         model.add(Dense(self.action_dim, activation='softmax'))
         return model
 
     def build_critic(self):
         model = Sequential()
-        model.add(Dense(64, activation='relu', input_dim=1))  # Change input_dim to 1
+        model.add(Dense(64, activation='relu', input_dim=3))  # Change input_dim to 1
         model.add(Dense(1))
         return model
 
     def get_action(self, state):
         print(f"State: {state}")
-        # state = np.array([[state]])  # Convert the scalar state to a 2D array with shape (1, 1)
+        state = np.array([state])  # Convert the scalar state to a 2D array with shape (1, 1)
         print('BEFORE')
         action_probs = self.actor.predict(state)[0]
         print('AFTER')
@@ -112,27 +112,39 @@ class PPOAgent:
 
             print('=====================')
             print('end of episode', episode)
+            print('total reward', episode_reward)
             print('=====================')
-
-            print(f"States: {states}")
             
             states = np.array(states)
+
+            print('states', states)
             actions = np.array(actions)
+            print('actions', actions)
             rewards = np.array(rewards)
+            print('rewards', rewards)
             next_states = np.array(next_states)
             dones = np.array(dones)
             
             for _ in range(self.epochs):
                 indices = np.random.choice(len(states), size=self.batch_size)
+
+                print('indices', indices)
+
+                print('batch_size', self.batch_size)
+
                 batch_states = states[indices]
                 batch_actions = actions[indices]
                 batch_rewards = rewards[indices]
                 batch_next_states = next_states[indices]
                 batch_dones = dones[indices]
+
+                print('batch_states', batch_states.shape)
                 
-                batch_states = np.reshape(batch_states, (self.batch_size, 1))  # Reshape to (batch_size, 1)
-                batch_next_states = np.reshape(batch_next_states, (self.batch_size, 1))  # Reshape to (batch_size, 1)
+                # issue here # solved
+                batch_states = np.reshape(batch_states, (self.batch_size, 3))  # Reshape to (batch_size, 1)
+                batch_next_states = np.reshape(batch_next_states, (self.batch_size, 3))  # Reshape to (batch_size, 1)
                 
+                # now issue here
                 values = self.critic.predict(batch_states)
                 next_values = self.critic.predict(batch_next_states)
 
