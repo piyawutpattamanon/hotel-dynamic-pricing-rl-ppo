@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 from gym import spaces
+import tensorflow as tf
 
 class SimpleGameEnv(gym.Env):
     def __init__(self):
@@ -13,7 +14,8 @@ class SimpleGameEnv(gym.Env):
         self.last_three_actions = []
 
     def reset(self):
-        self.state = 0
+        # initialize state as tensor [0,0,0]
+        self.state = np.zeros(3)
         self.step_count = 0
         self.last_three_actions = []
         return self.state
@@ -26,6 +28,8 @@ class SimpleGameEnv(gym.Env):
         
         opponent_action = 1 if sum(self.last_three_actions) >= 2 else 0
         reward = 1 if action != opponent_action else 0
+
+        self.state = np.array(self.last_three_actions)
         
         done = self.step_count >= self.episode_length
         return self.state, reward, done, {}
@@ -73,9 +77,13 @@ class PPOAgent:
         return model
 
     def get_action(self, state):
-        state = np.array([[state]])  # Convert the scalar state to a 2D array with shape (1, 1)
+        print(f"State: {state}")
+        # state = np.array([[state]])  # Convert the scalar state to a 2D array with shape (1, 1)
+        print('BEFORE')
         action_probs = self.actor.predict(state)[0]
+        print('AFTER')
         action_dist = Categorical(probs=action_probs)
+        print(f"Action probs: {action_probs}")
         action = action_dist.sample()
         return int(action.numpy())  # Remove the indexing [0]
     
@@ -87,8 +95,10 @@ class PPOAgent:
             states, actions, rewards, next_states, dones = [], [], [], [], []
             
             while not done:
+                before_state = state
                 action = self.get_action(state)
                 next_state, reward, done, _ = self.env.step(action)
+                print(f"Before state: {before_state}, Action: {action}, Next state: {next_state}, Reward: {reward}")
                 
                 states.append(state)
                 actions.append(action)
@@ -98,6 +108,10 @@ class PPOAgent:
                 
                 state = next_state
                 episode_reward += reward
+
+            print('=====================')
+            print('end of episode', episode)
+            print('=====================')
             
             states = np.array(states)
             actions = np.array(actions)
