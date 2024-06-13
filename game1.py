@@ -29,7 +29,8 @@ class SimpleGameEnv(gym.Env):
         opponent_action = 1 if sum(self.last_three_actions) >= 2 else 0
         reward = 1 if action != opponent_action else 0
 
-        self.state = np.array(self.last_three_actions)
+        force_last_three_actions = [0,0,0] + self.last_three_actions
+        self.state = np.array(force_last_three_actions[-3:])
         
         done = self.step_count >= self.episode_length
         return self.state, reward, done, {}
@@ -112,6 +113,8 @@ class PPOAgent:
             print('=====================')
             print('end of episode', episode)
             print('=====================')
+
+            print(f"States: {states}")
             
             states = np.array(states)
             actions = np.array(actions)
