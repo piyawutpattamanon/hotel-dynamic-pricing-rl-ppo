@@ -1,0 +1,5 @@
+numpy
+tensorflow
+gym
+tf-keras
+tensorflow-probability
