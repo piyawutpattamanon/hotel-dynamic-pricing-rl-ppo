@@ -66,6 +66,9 @@ class SACAgent:
         self.tau = tau
         self.batch_size = batch_size
 
+        self.target_entropy = -np.prod(env.action_space.shape).item()  # add this line
+
+
         self.actor = self.build_actor()
         self.critic1 = self.build_critic()
         self.critic2 = self.build_critic()
@@ -134,10 +137,18 @@ class SACAgent:
         # Update Critic networks
         next_actions = np.array([self.get_action(next_state) for next_state in next_states])
         next_actions_one_hot = tf.one_hot(next_actions, self.action_dim)
+        
+        # Calculate target Q values
         next_q1 = self.target_critic1(tf.concat([next_states, next_actions_one_hot], axis=1))
         next_q2 = self.target_critic2(tf.concat([next_states, next_actions_one_hot], axis=1))
-        next_q = tf.minimum(next_q1, next_q2) - self.alpha * tf.math.log(next_actions_one_hot + 1e-10)
-
+        
+        # Log probability of the next action
+        next_action_probs = self.actor(next_states)
+        next_action_dist = tf.compat.v1.distributions.Categorical(probs=next_action_probs)
+        next_log_probs = next_action_dist.log_prob(next_actions)
+        
+        # Calculate the target Q value
+        next_q = tf.minimum(next_q1, next_q2) - self.alpha * next_log_probs
         q_target = rewards + self.gamma * (1 - dones) * next_q
 
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
@@ -179,6 +190,7 @@ class SACAgent:
     def update_target_network(self, source, target):
         for src_var, tgt_var in zip(source.variables, target.variables):
             tgt_var.assign(self.tau * src_var + (1 - self.tau) * tgt_var)
+
 
 # Create the environment and agent
 env = SimpleGameEnv()
