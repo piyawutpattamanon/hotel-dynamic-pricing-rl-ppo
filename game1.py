@@ -3,7 +3,7 @@ import gym
 from gym import spaces
 import tensorflow as tf
 
-REWARD_CAP = 10
+REWARD_CAP = 0
 STATE_SIZE = 3 + REWARD_CAP
 
 class SimpleGameEnv(gym.Env):
@@ -28,26 +28,35 @@ class SimpleGameEnv(gym.Env):
 
     def step(self, action):
         self.step_count += 1
-        self.last_three_actions.append(action)
-        if len(self.last_three_actions) > 3:
-            self.last_three_actions.pop(0)
-        
+
         opponent_action = 1 if sum(self.last_three_actions) >= 2 else 0
-        reward = 1 if action != opponent_action else 0
+        
+        
+        
+        
+        reward = 1 if action != opponent_action else -1
         self.accumulated_reward += reward
         self.historical_rewards.append(reward)
 
         capped_accumulated_reward = min(self.accumulated_reward, REWARD_CAP)
         # one hot encode the accumulated reward
         reward_state = [0 for i in range(REWARD_CAP)]
-        reward_state[capped_accumulated_reward-1] = 1
+        if REWARD_CAP > 0:
+            reward_state[capped_accumulated_reward-1] = 1
+
+        
+
+        self.last_three_actions.append(action)
+        if len(self.last_three_actions) > 3:
+            self.last_three_actions.pop(0)
 
         force_last_three_actions = [0,0,0] + self.last_three_actions
-        self.state = np.array(force_last_three_actions[-3:] + reward_state)
+        # self.state = np.array(force_last_three_actions[-3:] + reward_state)
         # self.state = np.array(force_last_three_actions[-3:] + [reward])
+        self.state = np.array(force_last_three_actions[-3:])
         
         done = self.step_count >= self.episode_length
-        return self.state, self.accumulated_reward, done, {}
+        return self.state, reward, done, {}
 
     def render(self, mode='human'):
         pass
@@ -214,6 +223,13 @@ class PPOAgent:
                     print(action_dist)
 
                     log_probs = action_dist.log_prob(batch_actions)
+                    print('action probs')
+                    print(action_probs.shape)
+                    print(action_probs)
+
+                    print('log probs')
+                    print(log_probs.shape)
+                    print(log_probs)
                     
                     values_pred = tf.reshape(self.critic(batch_states), [-1])
                     print('values pred')
@@ -246,7 +262,7 @@ env = SimpleGameEnv()
 agent = PPOAgent(
     env,
     batch_size=20,
-    gamma=0.99,
+    gamma=0.5,
     actor_lr=0.001,
     critic_lr=0.001,
 )
