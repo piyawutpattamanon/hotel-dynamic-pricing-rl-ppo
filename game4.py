@@ -12,7 +12,7 @@ class SimpleGameEnv(gym.Env):
         self.action_space = spaces.Discrete(3)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(3)  # Our last action
         self.state = 0
-        self.episode_length = 10
+        self.episode_length = 100
         self.step_count = 0
         self.last_three_actions = []
         self.accumulated_reward = 0
@@ -45,7 +45,7 @@ class SimpleGameEnv(gym.Env):
         reward1 = np.dot(market_preference1, action_one_hot1)
         reward2 = np.dot(market_preference2, action_one_hot2)
 
-        reward = reward1 * reward2
+        reward = (reward1 * reward2) * 1.2
 
 
         self.state = (market_preference1, market_preference2)
@@ -199,6 +199,6 @@ class PPOAgent:
                 f.write(f"Episode {episode + 1}: Reward = {episode_reward:.2f}\n")
 
 env = SimpleGameEnv()
-agent = PPOAgent(env, batch_size=10, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
+agent = PPOAgent(env, batch_size=100, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
