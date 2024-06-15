@@ -6,7 +6,7 @@ import tensorflow as tf
 import copy
 
 REWARD_CAP = 0
-STATE_SIZE = 4 + REWARD_CAP
+STATE_SIZE = 5 + REWARD_CAP
 
 # set np.random.seed
 np.random.seed(0)
@@ -48,7 +48,7 @@ class SimpleGameEnv(gym.Env):
         return room
     
     def get_hotel_room_observation(self, room):
-        observation = np.concatenate((room['affinity'], [np.log(room['price'])]))
+        observation = np.concatenate((room['affinity'], [np.log(room['price'])], [room['time_vacant']]))
         return observation
     
     def get_hotel_rooms_observations(self):
