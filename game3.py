@@ -55,7 +55,13 @@ class SimpleGameEnv(gym.Env):
             self.last_three_actions.pop(0)
 
         force_last_three_actions = [0, 0, 0] + self.last_three_actions
-        self.state = np.array(force_last_three_actions[-3:])
+        next_state_raw = np.array(force_last_three_actions[-3:])
+
+        # make it one hot encoding of last three actions (rock, paper, scissors)
+        # for example if last three actions are [0, 1, 2] then state will be [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        next_state_one_hot = np.eye(3)[next_state_raw]
+        self.state = next_state_one_hot
+
 
         done = self.step_count >= self.episode_length
         return self.state, reward, done, {}
