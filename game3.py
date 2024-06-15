@@ -28,9 +28,11 @@ class SimpleGameEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
 
-        force_last_three_actions = sorted(([0, 0, 0] + self.last_three_actions)[:3])
-        opponent_action = (force_last_three_actions[1] + 1) % 3
+        force_last_three_actions = ([0, 0, 0] + self.last_three_actions)[-3:]
+        opponent_action = (sorted(force_last_three_actions)[1] + 1) % 3
         # opponent_action = np.random.choice([0, 1, 2])  # Random opponent action
+
+        
         
         # Determine reward
         if action == opponent_action:
@@ -41,6 +43,9 @@ class SimpleGameEnv(gym.Env):
             reward = 1  # Win
         else:
             reward = -1  # Lose
+
+        print(f"force_last_three_actions: {force_last_three_actions}")
+        print(f"Opponent action: {opponent_action} Your action: {action} reward: {reward}")
         
         self.accumulated_reward += reward
         self.historical_rewards.append(reward)
