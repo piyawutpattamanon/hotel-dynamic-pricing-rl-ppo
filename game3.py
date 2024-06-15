@@ -4,7 +4,7 @@ from gym import spaces
 import tensorflow as tf
 
 REWARD_CAP = 0
-STATE_SIZE = 3 + REWARD_CAP
+STATE_SIZE = 9 + REWARD_CAP
 
 class SimpleGameEnv(gym.Env):
     def __init__(self):
@@ -12,7 +12,7 @@ class SimpleGameEnv(gym.Env):
         self.action_space = spaces.Discrete(3)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(3)  # Our last action
         self.state = 0
-        self.episode_length = 20
+        self.episode_length = 100
         self.step_count = 0
         self.last_three_actions = []
         self.accumulated_reward = 0
@@ -59,7 +59,7 @@ class SimpleGameEnv(gym.Env):
 
         # make it one hot encoding of last three actions (rock, paper, scissors)
         # for example if last three actions are [0, 1, 2] then state will be [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        next_state_one_hot = np.eye(3)[next_state_raw]
+        next_state_one_hot = np.eye(3)[next_state_raw].flatten()
         self.state = next_state_one_hot
 
 
@@ -122,6 +122,8 @@ class PPOAgent:
             while not done:
                 before_state = state
                 action = self.get_action(state)
+                action_dists = self.actor.predict(np.array([state]))
+                print(f"state {state} Action probs: {action_dists}")
                 next_state, reward, done, _ = self.env.step(action)
                 
                 states.append(state)
@@ -176,12 +178,16 @@ class PPOAgent:
                 self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
                 self.critic_optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
             
+            # print rewards
+            print('batch rewards')
+            print(batch_rewards.shape)
+            print(batch_rewards)
             print(f"Episode {episode + 1}: Reward = {episode_reward}")
 
             with open('log.txt', 'a') as f:
                 f.write(f"Episode {episode + 1}: Reward = {episode_reward}\n")
 
 env = SimpleGameEnv()
-agent = PPOAgent(env, batch_size=20, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
+agent = PPOAgent(env, batch_size=100, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
