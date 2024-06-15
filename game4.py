@@ -29,10 +29,10 @@ class SimpleGameEnv(gym.Env):
         self.step_count += 1
 
         market_preference1 = np.random.normal(np.zeros(3), 1.0)
-        market_preference1[self.step_count % 3]  += 1
+        market_preference1[self.step_count % 3]  += 3.33
 
         market_preference2 = np.random.normal(np.zeros(3), 0.3)
-        market_preference2[(self.step_count + 1) % 3]  += 1
+        market_preference2[(self.step_count + 1) % 3]  += 1.0
 
         # create one hot encoded action
         action_one_hot1 = [0, 0, 0]
