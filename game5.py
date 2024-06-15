@@ -42,7 +42,8 @@ class SimpleGameEnv(gym.Env):
         room = {
             'id': np.random.randint(0, 100000),
             'affinity': np.random.normal(np.zeros(3), 1.0),
-            'price': np.exp(np.random.uniform(np.log(50), np.log(10000)))
+            'price': np.exp(np.random.uniform(np.log(50), np.log(10000))),
+            'time_vacant': 0,
         }
         return room
     
@@ -113,7 +114,17 @@ class SimpleGameEnv(gym.Env):
         print('revenue', revenue)
         print('bought room ids', bought_room_ids)
 
-        reward = revenue
+        vacant_penalty = 0
+        for room in self.hotel_rooms:
+            if room['id'] in bought_room_ids:
+                room['time_vacant'] = 0
+            else:
+                room['time_vacant'] += 1
+                vacant_penalty += 1000 * room['time_vacant'] ** 0.5
+
+        print('vacant_penalty', vacant_penalty)
+
+        reward = revenue - vacant_penalty
 
 
         self.state = self.get_hotel_rooms_observations()
