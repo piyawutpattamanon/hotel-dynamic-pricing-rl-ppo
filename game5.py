@@ -17,7 +17,7 @@ class SimpleGameEnv(gym.Env):
         self.action_space = spaces.Discrete(2)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(2)  # Our last action
         self.state = 0
-        self.episode_length = 40
+        self.episode_length = 100
         self.step_count = 0
         self.last_three_actions = []
         self.accumulated_reward = 0
@@ -72,9 +72,9 @@ class SimpleGameEnv(gym.Env):
 
         for index, room_action in enumerate(action):
             if room_action == 0:
-                self.hotel_rooms[index]['price'] *= 0.9
+                self.hotel_rooms[index]['price'] *= 0.8
             elif room_action == 1:
-                self.hotel_rooms[index]['price'] *= 1.1
+                self.hotel_rooms[index]['price'] *= 1.2
                 
         print('williness to pay', [customer['willingness_to_pay'] for customer in self.customers])
         print('room prices', [room['price'] for room in self.hotel_rooms])
@@ -82,6 +82,8 @@ class SimpleGameEnv(gym.Env):
         revenue = 0
         bought_room_ids = set()
         for customer in self.customers:
+            customer_bought = False
+
             customer_affinity = customer['affinity']
             customer_willingness_to_pay = customer['willingness_to_pay']
             
@@ -91,18 +93,22 @@ class SimpleGameEnv(gym.Env):
             for room in sorted_candidates:
                 if room['id'] in bought_room_ids:
                     continue
-                if room['price'] <= customer_willingness_to_pay:
-                    # buy_chance = np.dot(room['affinity'], customer_affinity) * (customer_willingness_to_pay / room['price'] + 1e-6)
-                    from sklearn.metrics.pairwise import cosine_similarity
+                
+                # buy_chance = np.dot(room['affinity'], customer_affinity) * (customer_willingness_to_pay / room['price'] + 1e-6)
+                from sklearn.metrics.pairwise import cosine_similarity
 
-                    cosine_score = cosine_similarity([room['affinity']], [customer_affinity])[0][0]
-                    pure_price_chance = (customer_willingness_to_pay / room['price'] + 1e-6)
-                    buy_chance = cosine_score * pure_price_chance
+                cosine_score = cosine_similarity([room['affinity']], [customer_affinity])[0][0]
+                pure_price_chance = (customer_willingness_to_pay / (room['price'] + 1e-6)) ** 2
+                buy_chance = cosine_score * pure_price_chance
 
-                    if np.random.uniform() < buy_chance:
-                        revenue += room['price']
-                        bought_room_ids.add(room['id'])
-                        break
+                # print all score component in one line
+                print(f"cosine_score: {cosine_score} pure_price_chance: {pure_price_chance} buy_chance: {buy_chance}")
+
+                if np.random.uniform() < buy_chance:
+                    revenue += room['price']
+                    bought_room_ids.add(room['id'])
+                    customer_bought = True
+                    break
 
         print('revenue', revenue)
         print('bought room ids', bought_room_ids)
@@ -146,10 +152,11 @@ class PPOAgent:
     def build_actor(self):
         from tensorflow.keras.layers import Dropout
         model = Sequential()
-        model.add(Dense(64, activation='relu', input_dim=STATE_SIZE))
+        model.add(Dense(100, activation='relu', input_dim=STATE_SIZE))
         # add dropout
         model.add(Dropout(0.1))
         # add dense layer
+        model.add(Dense(64, activation='relu'))
         model.add(Dense(16, activation='relu'))
         model.add(Dense(self.action_dim, activation='softmax'))
         return model
@@ -158,6 +165,8 @@ class PPOAgent:
         from tensorflow.keras.layers import Dropout
         model = Sequential()
         model.add(Dense(100, activation='relu', input_dim=STATE_SIZE))
+        model.add(Dropout(0.1))
+        model.add(Dense(16, activation='relu'))
         model.add(Dropout(0.1))
         model.add(Dense(1))
         return model
@@ -290,6 +299,6 @@ class PPOAgent:
                 f.write(f"Episode {episode + 1}: Reward = {episode_reward:4}\n")
 
 env = SimpleGameEnv()
-agent = PPOAgent(env, batch_size=40, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
+agent = PPOAgent(env, batch_size=100, gamma=0.8, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
