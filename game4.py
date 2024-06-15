@@ -28,7 +28,7 @@ class SimpleGameEnv(gym.Env):
     def step(self, action1, action2):
         self.step_count += 1
 
-        market_preference1 = np.random.normal(np.zeros(3), 0.3)
+        market_preference1 = np.random.normal(np.zeros(3), 1.0)
         market_preference1[self.step_count % 3]  += 1
 
         market_preference2 = np.random.normal(np.zeros(3), 0.3)
