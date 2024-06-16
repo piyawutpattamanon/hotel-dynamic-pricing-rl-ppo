@@ -40,11 +40,6 @@ The custom environment `HotelPricingGameEnv` is designed to simulate a hotel pri
 
 - **Agent Training**: The PPO agent is trained through multiple episodes, where it learns to adjust the prices based on the observed states to maximize cumulative rewards.
 
-### Usage
-
-1. **Environment Setup**: Initialize the environment with a specified number of customers and hotel rooms.
-2. **Agent Initialization**: Create a PPO agent with the environment and set hyperparameters like learning rates and discount factor.
-3. **Training**: Train the agent over several episodes to learn an optimal pricing strategy.
 
 ### Setting Up Dependencies
 ```
