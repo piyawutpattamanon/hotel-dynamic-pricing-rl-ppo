@@ -1,9 +1,9 @@
 # Hotel Dynamic Pricing Game with PPO Agent
 
-This repository contains the implementation of a custom reinforcement learning environment and a PPO (Proximal Policy Optimization) agent to solve the environment. The environment is modeled as a hotel pricing game, where the agent needs to set prices for hotel rooms to maximize revenue over a series of interactions with customers.
+This repository contains the implementation of a custom reinforcement learning environment and a PPO (Proximal Policy Optimization) agent to solve the environment. The environment is modeled as a hotel pricing game, where the agent needs to set prices for different hotel rooms to maximize total hotel revenue over a series of interactions with customers.
 
 ## Result
-From the plot, it can be observed that the PPO agent's performance improves over time, as indicated by the increasing trend in the moving average of rewards. This suggests that the agent effectively learns to set optimal prices for the hotel rooms, balancing the trade-off between room occupancy and revenue maximization.
+The PPO agent's performance improves over time, as indicated by the increasing trend in the moving average of rewards. This suggests that the agent effectively learns to set optimal prices for the hotel rooms, balancing the trade-off between room occupancy and revenue maximization.
 ![Total Revenue over Time](game5_reward.png)
 
 
@@ -14,7 +14,7 @@ From the plot, it can be observed that the PPO agent's performance improves over
 The custom environment `HotelPricingGameEnv` is designed to simulate a hotel pricing scenario where:
 - The environment contains multiple hotel rooms, each with price, and affinity vector.
 - Customers have individual preferences as affinity vector and willingness to pay for hotel rooms.
-- The goal of the environment is to maximize total revenue by setting optimal prices for hotel rooms, considering both customer preferences and willingness to pay.
+- The goal of the environment is to maximize total hotel revenue by setting optimal prices for different hotel rooms, considering both customer preferences and willingness to pay.
 
 ### Theoretical Concepts
 
@@ -46,12 +46,11 @@ The custom environment `HotelPricingGameEnv` is designed to simulate a hotel pri
 2. **Agent Initialization**: Create a PPO agent with the environment and set hyperparameters like learning rates and discount factor.
 3. **Training**: Train the agent over several episodes to learn an optimal pricing strategy.
 
-### Dependencies
+### Setting Up Dependencies
+```
+pip install -r requirements.txt
+```
 
-- `gym`: For creating and managing the custom environment.
-- `numpy`: For numerical operations and data manipulation.
-- `tensorflow`: For building and training neural network models.
-- `sklearn`: For calculating cosine similarity.
   
 ### Running the Code
 
