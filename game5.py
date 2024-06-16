@@ -5,15 +5,22 @@ import tensorflow as tf
 # want deep copy
 import copy
 
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow_probability.python.distributions import Categorical
+
 REWARD_CAP = 0
 STATE_SIZE = 5 + REWARD_CAP
 
 # set np.random.seed
-np.random.seed(1)
+np.random.seed(0)
 
-class SimpleGameEnv(gym.Env):
+class HotelPricingGameEnv(gym.Env):
     def __init__(self):
-        super(SimpleGameEnv, self).__init__()
+        super(HotelPricingGameEnv, self).__init__()
         self.action_space = spaces.Discrete(2)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(2)  # Our last action
         self.state = 0
@@ -136,14 +143,7 @@ class SimpleGameEnv(gym.Env):
     def render(self, mode='human'):
         pass
 
-gymenv = SimpleGameEnv()
 
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
-from tensorflow_probability.python.distributions import Categorical
 
 class PPOAgent:
     def __init__(self, env, actor_lr=0.001, critic_lr=0.001, gamma=0.99, clip_ratio=0.2, epochs=10, batch_size=64):
@@ -299,8 +299,9 @@ class PPOAgent:
                 batch_next_states = next_states[indices]
                 batch_dones = dones[indices]
                 
-                batch_states = np.reshape(batch_states, (self.batch_size * 5, STATE_SIZE))
-                batch_next_states = np.reshape(batch_next_states, (self.batch_size * 5, STATE_SIZE))
+                
+                batch_states = np.reshape(batch_states, (batch_states.size // STATE_SIZE, STATE_SIZE))
+                batch_next_states = np.reshape(batch_next_states, (batch_states.size // STATE_SIZE, STATE_SIZE))
                 
                 policies = self.actor.predict(batch_states)
                 values = self.critic.predict(batch_states).flatten()
@@ -356,7 +357,7 @@ tensorflow.python.framework.errors_impl.InvalidArgumentError: {{function_node __
             with open('log.txt', 'a') as f:
                 f.write(f"Episode {episode + 1}: Reward = {episode_reward:,.2f}\n")
 
-env = SimpleGameEnv()
+env = HotelPricingGameEnv()
 agent = PPOAgent(env, batch_size=20, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
