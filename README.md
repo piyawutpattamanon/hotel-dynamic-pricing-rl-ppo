@@ -56,3 +56,17 @@ python src/game5.py
 ```
 
 This project demonstrates the application of reinforcement learning to a practical problem in hotel pricing, showcasing the potential of RL in optimizing complex decision-making processes.
+
+### Visualize Learning Results with TensorBoard
+
+The learning script will write logs to `logs/` directory. We can use TensorBoard to visualize the learning results from the logs by running the command below.
+
+```bash
+tensorboard --logdir=logs/
+```
+
+This will start the TensorBoard HTTP server. We can access the dashboard in this URL
+
+```bash
+http://localhost:6006/#scalars
+```
