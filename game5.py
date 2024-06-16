@@ -12,29 +12,34 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow_probability.python.distributions import Categorical
 
-REWARD_CAP = 0
-STATE_SIZE = 5 + REWARD_CAP
+STATE_SIZE = 5
 
 # set np.random.seed
 np.random.seed(0)
 
 class HotelPricingGameEnv(gym.Env):
-    def __init__(self):
+    def __init__(
+            self,
+            episode_length=20,
+            num_customers=15,
+            num_hotel_rooms=5,
+        ):
         super(HotelPricingGameEnv, self).__init__()
+        self.num_customers = num_customers
+        self.num_hotel_rooms = num_hotel_rooms
+
         self.action_space = spaces.Discrete(2)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(2)  # Our last action
         self.state = 0
-        self.episode_length = 20
+        self.episode_length = episode_length
         self.step_count = 0
         self.last_three_actions = []
         self.accumulated_reward = 0
         self.historical_rewards = []
 
-        num_customers = 15
-        self.customers = [self.create_customer() for _ in range(num_customers)]
+        self.customers = [self.create_customer() for _ in range(self.num_customers)]
 
-        num_hotel_rooms = 5
-        self.original_hotel_rooms = [self.create_hotel_room() for _ in range(num_hotel_rooms)]
+        self.original_hotel_rooms = [self.create_hotel_room() for _ in range(self.num_hotel_rooms)]
 
 
         
@@ -357,7 +362,9 @@ tensorflow.python.framework.errors_impl.InvalidArgumentError: {{function_node __
             with open('log.txt', 'a') as f:
                 f.write(f"Episode {episode + 1}: Reward = {episode_reward:,.2f}\n")
 
-env = HotelPricingGameEnv()
-agent = PPOAgent(env, batch_size=20, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
+
+EPISODE_LENGTH = 20
+env = HotelPricingGameEnv(episode_length=EPISODE_LENGTH, num_customers=15, num_hotel_rooms=5)
+agent = PPOAgent(env, batch_size=EPISODE_LENGTH, gamma=0.2, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
