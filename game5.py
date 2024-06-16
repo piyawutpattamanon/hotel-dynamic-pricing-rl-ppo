@@ -1,17 +1,14 @@
-import numpy as np
-import gym
-from gym import spaces
-import tensorflow as tf
 import copy
 
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow_probability.python.distributions import Categorical
-from tensorflow.keras.layers import Dropout
 from sklearn.metrics.pairwise import cosine_similarity
+import gym
+from gym import spaces
 
 
 class HotelPricingGameEnv(gym.Env):
@@ -225,6 +222,10 @@ class PPOAgent:
         action_dist = Categorical(probs=action_probs)
         action = action_dist.sample()
         return int(action.numpy())
+    
+    def log_to_file(self, text):
+        with open("log.txt", "a") as f:
+            f.write(text)
 
     def train(self, episodes):
         for episode in range(episodes):
@@ -325,9 +326,7 @@ class PPOAgent:
                 )
 
             print(f"Episode {episode + 1}: Reward = {episode_reward}")
-
-            with open("log.txt", "a") as f:
-                f.write(f"Episode {episode + 1}: Reward = {episode_reward:,.2f}\n")
+            self.log_to_file(f"Episode {episode + 1}: Reward = {episode_reward}\n")
 
 
 np.random.seed(0)
