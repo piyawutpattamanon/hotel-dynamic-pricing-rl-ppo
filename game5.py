@@ -9,7 +9,7 @@ REWARD_CAP = 0
 STATE_SIZE = 5 + REWARD_CAP
 
 # set np.random.seed
-np.random.seed(0)
+np.random.seed(1)
 
 class SimpleGameEnv(gym.Env):
     def __init__(self):
@@ -17,16 +17,16 @@ class SimpleGameEnv(gym.Env):
         self.action_space = spaces.Discrete(2)  # 0: rock, 1: paper, 2: scissors
         self.observation_space = spaces.Discrete(2)  # Our last action
         self.state = 0
-        self.episode_length = 100
+        self.episode_length = 20
         self.step_count = 0
         self.last_three_actions = []
         self.accumulated_reward = 0
         self.historical_rewards = []
 
-        num_customers = 3
+        num_customers = 15
         self.customers = [self.create_customer() for _ in range(num_customers)]
 
-        num_hotel_rooms = 2
+        num_hotel_rooms = 5
         self.original_hotel_rooms = [self.create_hotel_room() for _ in range(num_hotel_rooms)]
 
 
@@ -42,7 +42,7 @@ class SimpleGameEnv(gym.Env):
         room = {
             'id': np.random.randint(0, 100000),
             'affinity': np.random.normal(np.zeros(3), 1.0),
-            'price': np.exp(np.random.uniform(np.log(50), np.log(10000))),
+            'price': np.exp(np.random.uniform(np.log(100), np.log(1000))),
             'time_vacant': 0,
         }
         return room
@@ -73,9 +73,9 @@ class SimpleGameEnv(gym.Env):
 
         for index, room_action in enumerate(action):
             if room_action == 0:
-                self.hotel_rooms[index]['price'] *= 0.8
+                self.hotel_rooms[index]['price'] *= 0.7
             elif room_action == 1:
-                self.hotel_rooms[index]['price'] *= 1.2
+                self.hotel_rooms[index]['price'] *= 1.3
                 
         print('williness to pay', [customer['willingness_to_pay'] for customer in self.customers])
         print('room prices', [room['price'] for room in self.hotel_rooms])
@@ -120,7 +120,7 @@ class SimpleGameEnv(gym.Env):
                 room['time_vacant'] = 0
             else:
                 room['time_vacant'] += 1
-                vacant_penalty += 1000 * room['time_vacant'] ** 0.5
+                vacant_penalty += 100 * np.log(room['time_vacant'])
 
         print('vacant_penalty', vacant_penalty)
 
@@ -163,13 +163,38 @@ class PPOAgent:
     def build_actor(self):
         from tensorflow.keras.layers import Dropout
         model = Sequential()
-        model.add(Dense(100, activation='relu', input_dim=STATE_SIZE))
+        model.add(Dense(200, activation='relu', input_dim=STATE_SIZE))
         # add dropout
         model.add(Dropout(0.1))
         # add dense layer
         model.add(Dense(64, activation='relu'))
+
+        model.add(Dropout(0.1))
+
         model.add(Dense(16, activation='relu'))
-        model.add(Dense(self.action_dim, activation='softmax'))
+
+        # model.add(Dense(self.action_dim, activation='softmax'))
+
+        def softmax_with_caps(x):
+            # Apply softmax to the input
+            probabilities = tf.nn.softmax(x)
+            
+            # Define the minimum and maximum caps
+            min_cap = 0.1
+            max_cap = 0.9
+            
+            # Clip the probabilities to be within the specified range
+            clipped_probabilities = tf.clip_by_value(probabilities, min_cap, max_cap)
+            
+            # Normalize the clipped probabilities to ensure they sum to 1
+            normalized_probabilities = clipped_probabilities / tf.reduce_sum(clipped_probabilities, axis=-1, keepdims=True)
+            
+            return normalized_probabilities
+
+        
+        model.add(Dense(self.action_dim))
+        model.add(tf.keras.layers.Activation(softmax_with_caps))
+
         return model
 
     def build_critic(self):
@@ -219,6 +244,8 @@ class PPOAgent:
                 print(f"Action dist: {action_dist}")
                 print(f"Action: {action}")
                 next_state, reward, done, _ = self.env.step(action)
+
+                reward /= 1000
 
                 states += state
                 actions += action
@@ -272,8 +299,8 @@ class PPOAgent:
                 batch_next_states = next_states[indices]
                 batch_dones = dones[indices]
                 
-                batch_states = np.reshape(batch_states, (self.batch_size * 2, STATE_SIZE))
-                batch_next_states = np.reshape(batch_next_states, (self.batch_size * 2, STATE_SIZE))
+                batch_states = np.reshape(batch_states, (self.batch_size * 5, STATE_SIZE))
+                batch_next_states = np.reshape(batch_next_states, (self.batch_size * 5, STATE_SIZE))
                 
                 policies = self.actor.predict(batch_states)
                 values = self.critic.predict(batch_states).flatten()
@@ -285,6 +312,26 @@ class PPOAgent:
                     action_probs = self.actor(batch_states)
                     action_dist = Categorical(probs=action_probs)
                     log_probs = action_dist.log_prob(batch_actions)
+                    """
+2024-06-16 08:27:39.423411: W tensorflow/core/framework/op_kernel.cc:1839] OP_REQUIRES failed at sparse_xent_op.cc:103 : INVALID_ARGUMENT: Received a label value of 2 which is outside the valid range of [0, 2).  Label values: 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+2024-06-16 08:27:39.423433: W tensorflow/core/framework/local_rendezvous.cc:404] Local rendezvous is aborting with status: INVALID_ARGUMENT: Received a label value of 2 which is outside the valid range of [0, 2).  Label values: 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+Traceback (most recent call last):
+  File "/Users/sammymymy/Desktop/radiant1/game5.py", line 315, in <module>
+    agent.train(episodes=1000)
+  File "/Users/sammymymy/Desktop/radiant1/game5.py", line 287, in train
+    log_probs = action_dist.log_prob(batch_actions)
+  File "/Users/sammymymy/miniforge3/lib/python3.10/site-packages/tensorflow_probability/python/distributions/distribution.py", line 1287, in log_prob
+    return self._call_log_prob(value, name, **kwargs)
+  File "/Users/sammymymy/miniforge3/lib/python3.10/site-packages/tensorflow_probability/python/distributions/distribution.py", line 1269, in _call_log_prob
+    return self._log_prob(value, **kwargs)
+  File "/Users/sammymymy/miniforge3/lib/python3.10/site-packages/tensorflow_probability/python/distributions/categorical.py", line 312, in _log_prob
+    return -tf.nn.sparse_softmax_cross_entropy_with_logits(
+  File "/Users/sammymymy/miniforge3/lib/python3.10/site-packages/tensorflow/python/util/traceback_utils.py", line 153, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "/Users/sammymymy/miniforge3/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 5983, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.InvalidArgumentError: {{function_node __wrapped__SparseSoftmaxCrossEntropyWithLogits_device_/job:localhost/replica:0/task:0/device:CPU:0}} Received a label value of 2 which is outside the valid range of [0, 2).  Label values: 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 [Op:SparseSoftmaxCrossEntropyWithLogits] name: 
+                    """
                     
                     values_pred = tf.reshape(self.critic(batch_states), [-1])
                     advantages = returns - values_pred
@@ -307,9 +354,9 @@ class PPOAgent:
             print(f"Episode {episode + 1}: Reward = {episode_reward}")
 
             with open('log.txt', 'a') as f:
-                f.write(f"Episode {episode + 1}: Reward = {episode_reward:4}\n")
+                f.write(f"Episode {episode + 1}: Reward = {episode_reward:,.2f}\n")
 
 env = SimpleGameEnv()
-agent = PPOAgent(env, batch_size=100, gamma=0.8, actor_lr=0.001, critic_lr=0.001)
+agent = PPOAgent(env, batch_size=20, gamma=0.5, actor_lr=0.001, critic_lr=0.001)
 
 agent.train(episodes=1000)
