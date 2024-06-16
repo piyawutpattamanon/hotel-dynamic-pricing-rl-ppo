@@ -22,13 +22,21 @@ The custom environment `HotelPricingGameEnv` is designed to simulate a hotel pri
   
 2. **Proximal Policy Optimization (PPO)**: PPO is a policy gradient method for RL that provides a balanced approach between performance and computational complexity. It uses a clipped objective function to ensure the policy updates are not too drastic, thus maintaining stable learning.
 
-3. **Affinity and Willingness to Pay**: Customers and hotel rooms have an affinity vector, representing their features and preferences. The willingness to pay is a measure of how much a customer is ready to spend on a room, which influences the decision-making process.
 
-4. **Cosine Similarity**: This is used to measure the similarity between customer and hotel room affinities. Higher similarity scores indicate a better match, increasing the likelihood of a customer choosing that room.
-
-5. **Action Space and Observation Space**:
+3. **Action Space and Observation Space**:
    - **Action Space**: The actions represent the pricing decisions for hotel rooms, whether to increase or decrease the price.
    - **Observation Space**: The observations include the current state of the hotel rooms, such as their prices, affinities, and how long they have been vacant.
+
+
+4. **Reward Function**
+    - **Revenue Calculation**:
+        - For each customer, the function calculates the probability of booking a room based on the cosine similarity between the customer's affinity vector and the room's affinity vector, as well as the customer's willingness to pay compared to the room's price.
+        - If a customer decides to book a room, the revenue is increased by the room's price, and the room is marked as booked.
+    - **Vacant Room Penalty**:
+        - For each room that remains unbooked, a penalty is applied based on how long the room has been vacant. The penalty is calculated as `100 x log(time_vacant)`.
+        - The longer a room remains vacant, the higher the penalty.
+    - **Reward Calculation**:
+        - The total reward for each step is the revenue generated from the entire portfolio of booked rooms minus the vacant room penalties.
 
 ### Key Components
 
