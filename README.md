@@ -41,6 +41,8 @@ The custom environment `HotelPricingGameEnv` is designed to simulate a hotel pri
 - **Agent Training**: The PPO agent is trained through multiple episodes, where it learns to adjust the prices based on the observed states to maximize cumulative rewards.
 
 
+## Running
+
 ### Setting Up Dependencies
 ```
 pip install -r requirements.txt
@@ -70,3 +72,25 @@ This will start the TensorBoard HTTP server. We can access the dashboard in this
 ```bash
 http://localhost:6006/#scalars
 ```
+
+
+## Further Improvement
+
+### Enhance the environment to better reflect real-world dynamics:
+- Model customer demand based on seasonality, day of week, special events, etc. Demand will fluctuate over time. 
+- Incorporate competitor pricing information. The environment should consider prices of other hotels in the same market. 
+- Add in variable costs per room night sold (housekeeping, utilities, etc). Revenue maximization alone is not the goal, profit maximization is. 
+- Have cancellations, no-shows, overbooking. In the real-world, not every booking results in a stay. 
+### Make the action space more granular and realistic:
+- Allow for setting different prices by room type, length of stay, booking channel, etc. Hotels utilize very granular pricing. 
+- Enable closing out room types or lengths of stay to optimize remaining inventory. This is common revenue management practice. 
+### Improve the reward signal:
+- Optimize for long-term revenue or profit instead of immediate reward. Use the right success metric. 
+- Consider impact of pricing on customer perception/lifetime value, not just single stay. Factor this into the reward. 
+### Leverage state-of-the-art RL algorithms:
+- Implement transformer-based architectures which have shown promise for RL in recent research. 
+- Use more sample efficient off-policy algorithms like Soft Actor Critic (SAC). This is important in real-world settings with limited data. 
+- Explore hierarchical reinforcement learning to handle multiple time scales (daily pricing vs long-term strategy). 
+### Combine RL with other machine learning techniques:
+- Use supervised learning to predict demand, cancellations, no-shows and feed this into the RL model. 
+Leverage transfer learning to reduce learning time if expanding to new hotels.
