@@ -77,7 +77,7 @@ class SACAgent:
         self.actor_optimizer = Adam(learning_rate=actor_lr)
         self.critic1_optimizer = Adam(learning_rate=critic_lr)
         self.critic2_optimizer = Adam(learning_rate=critic_lr)
-        self.alpha = tf.Variable(0.2, dtype=tf.float32)
+        self.alpha = tf.Variable(0.000, dtype=tf.float32)
         self.alpha_optimizer = Adam(learning_rate=alpha_lr)
         self.log_alpha = tf.Variable(0.0, dtype=tf.float32)
 
@@ -86,14 +86,17 @@ class SACAgent:
 
     def build_actor(self):
         model = Sequential()
-        model.add(Dense(16, activation='relu', input_dim=self.state_dim))
+        model.add(Dense(3, activation='relu', input_dim=self.state_dim))
         model.add(Dense(self.action_dim, activation='softmax'))
         return model
 
     def build_critic(self):
+        from tensorflow.keras.layers import Lambda
         model = Sequential()
-        model.add(Dense(16, activation='relu', input_dim=self.state_dim + self.action_dim))
-        model.add(Dense(1))
+        model.add(Dense(64, activation='relu', input_dim=self.state_dim + self.action_dim))
+        model.add(Dense(1, activation='sigmoid'))
+        # i want the model to output between -0.5 to 0.5
+        model.add(Lambda(lambda x: 2*x - 1))
         return model
 
     def get_action(self, state):
@@ -136,20 +139,43 @@ class SACAgent:
 
         # Update Critic networks
         next_actions = np.array([self.get_action(next_state) for next_state in next_states])
+        print(f"Next actions: {next_actions}")
         next_actions_one_hot = tf.one_hot(next_actions, self.action_dim)
+        print(f"Next actions one hot: {next_actions_one_hot}")
         
         # Calculate target Q values
         next_q1 = self.target_critic1(tf.concat([next_states, next_actions_one_hot], axis=1))
         next_q2 = self.target_critic2(tf.concat([next_states, next_actions_one_hot], axis=1))
+
+        next_q1 = tf.reshape(next_q1, (self.batch_size, ))
+        next_q2 = tf.reshape(next_q2, (self.batch_size, ))
+
+        print(f"Next Q1: {next_q1}")
+        print(f"Next Q2: {next_q2}")
         
         # Log probability of the next action
         next_action_probs = self.actor(next_states)
+        print(f"Next action probs: {next_action_probs}")
         next_action_dist = tf.compat.v1.distributions.Categorical(probs=next_action_probs)
+        print(f"Next action dist: {next_action_dist}")
         next_log_probs = next_action_dist.log_prob(next_actions)
+        # print(f"Next log probs: {next_log_probs}")
+
+        # print(f"next_q1: {next_q1.shape} {next_q1}")
+        # print(f"next_q2: {next_q2.shape} {next_q2}")
         
         # Calculate the target Q value
-        next_q = tf.minimum(next_q1, next_q2) - self.alpha * next_log_probs
+        # next_q = tf.minimum(next_q1, next_q2) - self.alpha * next_log_probs
+        next_q = tf.minimum(next_q1, next_q2)
+        print(f"Next Q: {next_q.shape} {next_q}")
+        print(f"Rewards: {rewards.shape} {rewards}")
+        # print sum of rewards
+        print(f"Sum of rewards: {np.sum(rewards)}")
+        print(f"Dones: {dones.shape} {dones}")
         q_target = rewards + self.gamma * (1 - dones) * next_q
+
+        print(f"Q target: {q_target.shape} {q_target}")
+
 
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
             actions_one_hot = tf.one_hot(actions, self.action_dim)
@@ -198,9 +224,9 @@ agent = SACAgent(
     env,
     batch_size=20,
     gamma=0.5,
-    actor_lr=0.001,
-    critic_lr=0.001,
+    actor_lr=0.005,
+    critic_lr=0.005,
 )
 
 # Train the agent
-agent.train(episodes=1000)
+agent.train(episodes=10000)

@@ -4,7 +4,7 @@ This repository contains the implementation of a custom reinforcement learning e
 
 ## Result
 The PPO agent's performance improves over time, as indicated by the increasing trend in the moving average of rewards. This suggests that the agent effectively learns to set optimal prices for the hotel rooms, balancing the trade-off between room occupancy and revenue maximization.
-![Total Revenue over Time](game5_reward.png)
+![Total Revenue over Time](docs/game5_reward.png)
 
 
 ## High-Level Overview

@@ -224,7 +224,7 @@ class PPOAgent:
         return int(action.numpy())
     
     def log_to_file(self, text):
-        with open("log.txt", "a") as f:
+        with open("logs/log.txt", "a") as f:
             f.write(text)
 
     def train(self, episodes):
