@@ -52,7 +52,7 @@ pip install -r requirements.txt
 To run the training process, simply execute the script. The agent will interact with the environment, adjusting the prices of hotel rooms and learning to maximize revenue through reinforcement learning.
 
 ```bash
-python game5.py
+python src/game5.py
 ```
 
 This project demonstrates the application of reinforcement learning to a practical problem in hotel pricing, showcasing the potential of RL in optimizing complex decision-making processes.
