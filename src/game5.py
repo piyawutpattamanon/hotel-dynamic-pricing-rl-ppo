@@ -171,6 +171,9 @@ class PPOAgent:
         self.actor_optimizer = Adam(learning_rate=actor_lr)
         self.critic_optimizer = Adam(learning_rate=critic_lr)
 
+        self.log_dir = "logs/"
+        self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+
     def build_actor(self):
         model = Sequential()
         model.add(Dense(200, activation="relu", input_dim=self.env.observation_space.n))
@@ -226,6 +229,13 @@ class PPOAgent:
     def log_to_file(self, text):
         with open("logs/log.txt", "a") as f:
             f.write(text)
+
+    def log_to_tensorboard(self, episode, reward, actor_loss, critic_loss):
+        with self.summary_writer.as_default():
+            tf.summary.scalar('Reward', reward, step=episode)
+            tf.summary.scalar('Actor Loss', actor_loss, step=episode)
+            tf.summary.scalar('Critic Loss', critic_loss, step=episode)
+            self.summary_writer.flush()
 
     def train(self, episodes):
         for episode in range(episodes):
@@ -327,6 +337,8 @@ class PPOAgent:
 
             print(f"Episode {episode + 1}: Reward = {episode_reward}")
             self.log_to_file(f"Episode {episode + 1}: Reward = {episode_reward}\n")
+            self.log_to_tensorboard(episode + 1, episode_reward, actor_loss, critic_loss)
+
 
 
 np.random.seed(0)
